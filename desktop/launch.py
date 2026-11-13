@@ -27,6 +27,7 @@ from core.services.companies import NewCompany, create_company_file, load_compan
 from core.db import upgrade_sqlite
 from core.services.preferences import load_recent, remember_recent
 from desktop.company_window import CompanyWindow
+from desktop.views.import_wizard import attach_launch_button
 from desktop.wizard import NewCompanyWizard
 from sqlalchemy import select
 
@@ -62,6 +63,7 @@ class LaunchWindow(QMainWindow):
             button = QPushButton(label)
             button.clicked.connect(handler)
             row.addWidget(button)
+        attach_launch_button(row, self)
         layout.addLayout(row)
         layout.addWidget(QLabel("Recent companies"))
         self.table = QTableWidget(0, 3)
@@ -110,6 +112,10 @@ class LaunchWindow(QMainWindow):
             return
         wizard.remember()
         self._open_engine(Path(path), engine, company_id, member_id)
+        if getattr(self, "_open_import_next", False) and self.company_window is not None:
+            from desktop.views.import_wizard import open_for_company
+
+            open_for_company(self.company_window)
 
     def open_company(self) -> None:
         path, _ = QFileDialog.getOpenFileName(

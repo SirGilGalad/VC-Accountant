@@ -1,0 +1,12 @@
+!ACCNT	NAME	ACCNTTYPE	ACCNUM	DESC
+ACCNT	"Operating Checking"	BANK	1010	Fictional	
+ACCNT	Accounts Receivable	AR	1100	
+ACCNT	Advertising	EXP	6000	
+!CUST	NAME	COMPANYNAME
+CUST	Canyon Supply	Canyon Supply
+CUST	Red Rock Homes:Kitchen	Red Rock Homes
+!VEND	NAME	1099
+VEND	Mesa Lumber	Y
+VEND	Kanab Electric	N
+!EMP	NAME	FIRSTNAME	LASTNAME
+EMP	Pat Sample	Pat	Sample

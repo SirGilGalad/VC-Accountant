@@ -6,7 +6,8 @@
 | SQLAlchemy | Tables in `core/schema.py` and every service query. |
 | alembic | Migrations in `migrations/`, run when a company file opens. |
 | platformdirs | User data directory for prefill and recent companies. Not the tax id. |
+| openpyxl | Reads .xlsx report exports in the importer. |
 
 Dev-only: pytest, pytest-qt, hypothesis, ruff, and psycopg (Postgres tests when `VCA_TEST_PG_URL` is set).
 
-pandas and ReportLab are not dependencies. Spreadsheet reading and PDF reports arrive when a feature uses them.
+pandas and ReportLab are not dependencies. PDF reports arrive with the layout phase.

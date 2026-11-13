@@ -1,0 +1,16 @@
+!ACCNT	NAME	ACCNTTYPE	ACCNUM
+ACCNT	Operating Checking	BANK	1010
+ACCNT	Sales and Service Income	INC	4000
+ACCNT	Advertising	EXP	6000
+ACCNT	Depreciation Expense	EXP	6100
+ACCNT	Miscellaneous	EXP	6770
+ACCNT	Job Costs	EXP	5000
+ACCNT	Job Costs:Materials	EXP	5020
+!CUST	NAME
+CUST	Canyon Supply
+CUST	Red Rock Homes:Kitchen
+!VEND	NAME	1099
+VEND	Mesa Lumber	Y
+VEND	Kanab Electric	N
+!EMP	NAME	FIRSTNAME	LASTNAME
+EMP	Pat Sample	Pat	Sample
