@@ -90,6 +90,15 @@ class CompanyWindow(QMainWindow):
                 menu.addAction("New job", self.new_job)
                 menu.addAction("Job cost", self.job_cost)
                 menu.addAction("Over/under billing", lambda: self.show_report("wip"))
+                from desktop.packs.property import documents_screen, units_screen
+                from desktop.packs.resort import holds_screen, sites_screen
+
+                if self.company.pack_id == "property":
+                    menu.addAction("Units and Occupancy", lambda: units_screen(self))
+                    menu.addAction("Document Index", lambda: documents_screen(self))
+                elif self.company.pack_id == "resort":
+                    menu.addAction("Sites and Rates", lambda: sites_screen(self))
+                    menu.addAction("Reservation Holds", lambda: holds_screen(self))
             elif name == "Employees":
                 menu.addAction("Employee list", lambda: self._show_section("Employees"))
                 menu.addAction("Time", self.enter_time)

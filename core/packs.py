@@ -9,7 +9,7 @@ from sqlalchemy.engine import Connection
 
 from core.chart import account_id_by_number
 from core.errors import LedgerError
-from core.schema import cost_codes
+from core.schema import accounts, cost_codes
 from core.services.accounts import create_account
 
 PACKS: list[tuple[str, str, str]] = [
@@ -35,6 +35,25 @@ def pack_line(pack_id: str) -> str:
     raise KeyError(pack_id)
 
 
+def _next_free(conn: Connection, company_id: int, preferred: str) -> str:
+    """Keep a base account. A colliding pack number moves to the next free one in its family."""
+    used = {
+        row[0]
+        for row in conn.execute(select(accounts.c.number).where(accounts.c.company_id == company_id))
+    }
+    if preferred not in used:
+        return preferred
+    prefix = int(preferred[:2])
+    ceiling = prefix * 100 + 100
+    candidate = int(preferred) + 10
+    while candidate < ceiling:
+        text = f"{candidate:04d}"
+        if text not in used:
+            return text
+        candidate += 10
+    raise LedgerError(f"No free account number near {preferred}")
+
+
 def apply_pack(conn: Connection, company_id: int, member_id: int, pack_id: str) -> None:
     """Seed the pack's accounts and cost codes. General has neither."""
     if pack_id not in PACK_IDS:
@@ -43,19 +62,25 @@ def apply_pack(conn: Connection, company_id: int, member_id: int, pack_id: str) 
         module = importlib.import_module(f"packs.{pack_id}.pack")
     except ModuleNotFoundError:
         return
+    chosen: dict[str, str] = {}
     for number, name, account_type, subtype, parent_number in module.accounts:
-        parent_id = account_id_by_number(conn, company_id, parent_number) if parent_number else None
+        actual = _next_free(conn, company_id, number)
+        parent_id = None
+        if parent_number:
+            parent_actual = chosen.get(parent_number, parent_number)
+            parent_id = account_id_by_number(conn, company_id, parent_actual)
         create_account(
             conn,
             company_id=company_id,
             member_id=member_id,
-            number=number,
+            number=actual,
             name=name,
             account_type=account_type,
             subtype=subtype,
             parent_id=parent_id,
             pack_id=pack_id,
         )
+        chosen[number] = actual
     for code, name, category, division in getattr(module, "cost_codes", []):
         exists = conn.execute(
             select(cost_codes.c.id).where(

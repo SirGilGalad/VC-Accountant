@@ -556,3 +556,78 @@ job_budgets = Table(
     Column("amount_cents", BigInteger, nullable=False),
     UniqueConstraint("job_id", "cost_code_id", name="uq_job_budgets"),
 )
+
+units = Table(
+    "units",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("company_id", Integer, ForeignKey("companies.id"), nullable=False),
+    Column("property_name", String(200), nullable=False),
+    Column("unit_label", String(40), nullable=False),
+    Column("market_rent_cents", BigInteger, nullable=False, server_default="0"),
+    Column("status", String(20), nullable=False),
+    CheckConstraint("status IN ('vacant','occupied','notice')", name="ck_units_status"),
+    UniqueConstraint("company_id", "property_name", "unit_label", name="uq_units"),
+)
+
+occupancies = Table(
+    "occupancies",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("unit_id", Integer, ForeignKey("units.id"), nullable=False),
+    Column("tenant_party_id", Integer, ForeignKey("parties.id"), nullable=False),
+    Column("start", Date, nullable=False),
+    Column("end", Date),
+    Column("rent_cents", BigInteger, nullable=False, server_default="0"),
+    Column("deposit_cents", BigInteger, nullable=False, server_default="0"),
+)
+
+document_index = Table(
+    "document_index",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("company_id", Integer, ForeignKey("companies.id"), nullable=False),
+    Column("doc_type", String(30), nullable=False),
+    Column("state", String(10), nullable=False),
+    Column("party_id", Integer, ForeignKey("parties.id")),
+    Column("unit_id", Integer, ForeignKey("units.id")),
+    Column("recorded_date", Date),
+    Column("retention_note", Text, nullable=False),
+    Column("location_text", Text, nullable=False, server_default=""),
+    CheckConstraint(
+        "doc_type IN ('lease','notice','owner_statement','trust_record','lien_waiver','w9','insurance')",
+        name="ck_document_type",
+    ),
+    CheckConstraint("state IN ('UT','AZ','other')", name="ck_document_state"),
+)
+
+sites = Table(
+    "sites",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("company_id", Integer, ForeignKey("companies.id"), nullable=False),
+    Column("label", String(40), nullable=False),
+    Column("kind", String(10), nullable=False),
+    Column("nightly_rate_cents", BigInteger, nullable=False, server_default="0"),
+    Column("period_rate_cents", BigInteger),
+    CheckConstraint("kind IN ('site','cabin')", name="ck_sites_kind"),
+    UniqueConstraint("company_id", "label", name="uq_sites"),
+)
+
+reservation_holds = Table(
+    "reservation_holds",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("company_id", Integer, ForeignKey("companies.id"), nullable=False),
+    Column("guest_party_id", Integer, ForeignKey("parties.id"), nullable=False),
+    Column("site_id", Integer, ForeignKey("sites.id"), nullable=False),
+    Column("arrive", Date, nullable=False),
+    Column("depart", Date, nullable=False),
+    Column("amount_cents", BigInteger, nullable=False, server_default="0"),
+    Column("status", String(20), nullable=False),
+    Column("deposit_entry_id", Integer, ForeignKey("journal_entries.id")),
+    CheckConstraint(
+        "status IN ('hold','cancelled','checked_in','checked_out')",
+        name="ck_holds_status",
+    ),
+)

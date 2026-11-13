@@ -22,7 +22,7 @@ def test_sqlite_upgrade_seeds_a_zero_trial_balance(tmp_path):
         )
         assert trial_balance_net(conn, company_id) == 0
         version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar()
-    assert version == "0003_construction"
+    assert version == "0004_packs"
 
 
 @pytest.mark.skipif(not os.environ.get("VCA_TEST_PG_URL"), reason="Postgres URL is not set")
