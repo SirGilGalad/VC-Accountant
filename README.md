@@ -6,7 +6,7 @@ Payroll and tax forms are prepared as drafts; nothing is filed. Bank reconciliat
 
 Property management here is for Utah and Arizona managers (units, rent, and a document index). Resort work is site and cabin holds. Online booking and point-of-sale systems are not connected.
 
-Glen Canyon Construction LLC is the first live company to come across from QuickBooks exports, once Import from QuickBooks is in place. That import is hidden in this phase. The company file itself is never committed.
+Glen Canyon Construction LLC is the first live company to come across from exported lists, transaction detail, and a trial balance. Import stays staged until those figures tie to the cent. The company file itself is never committed.
 
 ## Run the desktop app
 
@@ -22,7 +22,7 @@ On Windows, `run_vca.bat` does the same thing from this folder. Company files us
 ## Layout
 
 ```
-core/            schema, services, queries
+core/            schema, services, queries, staged import
 packs/           industry packs (later phases)
 desktop/         PyQt6 windows
 migrations/      Alembic revision for SQLite and Postgres

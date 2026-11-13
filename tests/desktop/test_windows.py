@@ -8,7 +8,7 @@ import pytest
 pytest.importorskip("PyQt6.QtWidgets", exc_type=ImportError)
 pytest.importorskip("pytestqt", exc_type=ImportError)
 
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QPushButton
 
 from core.packs import PACK_IDS
 from core.services.companies import NewCompany, create_company_file
@@ -61,3 +61,5 @@ def test_close_company_returns_to_launch(qtbot, app, tmp_path, monkeypatch):
     company.close()
     assert launch.isVisible()
     assert QApplication.instance() is not None
+    labels = [button.text() for button in launch.findChildren(QPushButton)]
+    assert "Import from QuickBooks" in labels

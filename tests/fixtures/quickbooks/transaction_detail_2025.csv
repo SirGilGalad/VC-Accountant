@@ -1,0 +1,13 @@
+Red Mesa Builders LLC
+Transaction Detail by Account
+January 1 through December 31, 2025
+Fictional. Not a live company.
+
+Type,Date,Num,Name,Memo,Account,Class,Debit,Credit
+Check,03/01/2025,1001,Mesa Lumber,Ads,6000 Advertising,,150.00,
+Check,03/01/2025,1001,Mesa Lumber,,1010 Operating Checking,,-150.00,
+Invoice,06/15/2025,1002,Canyon Supply,,1010 Operating Checking,,"1,000.00",
+Invoice,06/15/2025,1002,Canyon Supply,,4000 Sales and Service Income,,,"1,000.00"
+Journal,11/01/2025,1003,,,1010 Operating Checking,,(40.00),
+Journal,11/01/2025,1003,,,6770 Miscellaneous,,,(40.00)
+Total 1010 Operating Checking,,,,,,,999999.00,

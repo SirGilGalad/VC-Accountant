@@ -404,3 +404,145 @@ audit_log = Table(
     Column("after_json", Text),
     Column("at", DateTime, server_default=func.now(), nullable=False),
 )
+
+import_batches = Table(
+    "import_batches",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("company_id", Integer, ForeignKey("companies.id"), nullable=False),
+    Column("source_system", String(40), nullable=False),
+    Column("label", String(200), nullable=False),
+    Column("status", String(20), nullable=False),
+    Column("cutoff_date", Date),
+    Column("created_by_member_id", Integer, ForeignKey("members.id"), nullable=False),
+    Column("created_at", DateTime, server_default=func.now(), nullable=False),
+    Column("finished_at", DateTime),
+    Column("files_json", Text, nullable=False, server_default="[]"),
+    Column("file_set_hash", String(64), nullable=False),
+    CheckConstraint(
+        "status IN ('staged','tied','imported','rejected','failed')",
+        name="ck_import_batch_status",
+    ),
+)
+
+stg_accounts = Table(
+    "stg_accounts",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("batch_id", Integer, ForeignKey("import_batches.id"), nullable=False),
+    Column("source_key", String(200), nullable=False),
+    Column("number", String(20), nullable=False, server_default=""),
+    Column("name", String(200), nullable=False),
+    Column("qb_type", String(40), nullable=False, server_default=""),
+    Column("account_type", String(20)),
+    Column("subtype", String(30)),
+    Column("parent_key", String(200)),
+    Column("is_active", Boolean, nullable=False, server_default="1"),
+    UniqueConstraint("batch_id", "source_key", name="uq_stg_accounts_key"),
+)
+
+stg_parties = Table(
+    "stg_parties",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("batch_id", Integer, ForeignKey("import_batches.id"), nullable=False),
+    Column("source_key", String(200), nullable=False),
+    Column("kind", String(20), nullable=False),
+    Column("display_name", String(200), nullable=False),
+    Column("is_1099", Boolean, nullable=False, server_default="0"),
+    Column("first_name", String(100)),
+    Column("last_name", String(100)),
+    Column("email", String(200)),
+    Column("phone", String(40)),
+    UniqueConstraint("batch_id", "source_key", name="uq_stg_parties_key"),
+    CheckConstraint(
+        "kind IN ('customer','vendor','employee','other')",
+        name="ck_stg_parties_kind",
+    ),
+)
+
+stg_jobs = Table(
+    "stg_jobs",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("batch_id", Integer, ForeignKey("import_batches.id"), nullable=False),
+    Column("source_key", String(200), nullable=False),
+    Column("number", String(40), nullable=False),
+    Column("name", String(200), nullable=False),
+    Column("customer_key", String(200)),
+    UniqueConstraint("batch_id", "source_key", name="uq_stg_jobs_key"),
+)
+
+stg_entries = Table(
+    "stg_entries",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("batch_id", Integer, ForeignKey("import_batches.id"), nullable=False),
+    Column("source_key", String(200), nullable=False),
+    Column("entry_date", Date, nullable=False),
+    Column("number", String(40), nullable=False),
+    Column("memo", Text),
+    Column("txn_type", String(40)),
+    UniqueConstraint("batch_id", "source_key", name="uq_stg_entries_key"),
+)
+
+stg_lines = Table(
+    "stg_lines",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("batch_id", Integer, ForeignKey("import_batches.id"), nullable=False),
+    Column("entry_id", Integer, ForeignKey("stg_entries.id"), nullable=False),
+    Column("line_no", Integer, nullable=False),
+    Column("account_key", String(200), nullable=False),
+    Column("account_name", String(200), nullable=False),
+    Column("debit_cents", BigInteger, nullable=False, server_default="0"),
+    Column("credit_cents", BigInteger, nullable=False, server_default="0"),
+    Column("party_name", String(200)),
+    Column("job_name", String(200)),
+    Column("source_class", String(80)),
+    Column("memo", Text),
+    CheckConstraint("debit_cents >= 0 AND credit_cents >= 0", name="ck_stg_lines_nonneg"),
+    CheckConstraint(
+        "(debit_cents = 0) <> (credit_cents = 0)",
+        name="ck_stg_lines_one_side",
+    ),
+)
+
+stg_source_trial_balance = Table(
+    "stg_source_trial_balance",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("batch_id", Integer, ForeignKey("import_batches.id"), nullable=False),
+    Column("account_key", String(200), nullable=False),
+    Column("account_path", String(200), nullable=False),
+    Column("debit_cents", BigInteger, nullable=False, server_default="0"),
+    Column("credit_cents", BigInteger, nullable=False, server_default="0"),
+    Column("as_of", Date),
+)
+
+import_issues = Table(
+    "import_issues",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("batch_id", Integer, ForeignKey("import_batches.id"), nullable=False),
+    Column("severity", String(10), nullable=False),
+    Column("file_name", String(200), nullable=False, server_default=""),
+    Column("row_number", Integer),
+    Column("message", Text, nullable=False),
+    CheckConstraint(
+        "severity IN ('info','warning','error')",
+        name="ck_import_issues_severity",
+    ),
+)
+
+import_mappings = Table(
+    "import_mappings",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("company_id", Integer, ForeignKey("companies.id"), nullable=False),
+    Column("source_system", String(40), nullable=False),
+    Column("source_key", String(200), nullable=False),
+    Column("target_table", String(40), nullable=False),
+    Column("target_id", Integer, nullable=False),
+    UniqueConstraint("company_id", "source_system", "source_key", name="uq_import_mappings"),
+)

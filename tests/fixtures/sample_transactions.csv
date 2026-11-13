@@ -1,0 +1,15 @@
+Red Mesa Builders LLC
+Transaction Detail
+Fictional export. Not a live company.
+
+Type,Date,Num,Name,Memo,Account,Class,Debit,Credit
+Check,03/01/2025,501,Mesa Lumber,Lumber,6000 Advertising,,150.00,
+Check,03/01/2025,501,Mesa Lumber,,1010 Operating Checking,,-150.00,
+Invoice,06/15/2025,100,Canyon Supply,,1010 Operating Checking,,"1,000.00",
+Invoice,06/15/2025,100,Canyon Supply,,4000 Sales and Service Income,,,"1,000.00"
+Deposit,08/01/2025,D1,,,1100 Accounts Receivable,,200.00,
+Deposit,08/01/2025,D1,,,1010 Operating Checking,,,200.00
+Bill,09/01/2025,B9,Kanab Electric,,6720 Supplies,,75.00,
+Bill,09/01/2025,B9,Kanab Electric,,2000 Accounts Payable,,,75.00
+Total 6000 Advertising,,,,,,,99999.00,
+General Journal,10/01/2025,99,,,Sales,,10.00,
