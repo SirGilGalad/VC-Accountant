@@ -1,17 +1,5 @@
-# Vantage Core - Core Dependencies
-
-# GUI Framework
-PyQt6>=6.7.0
-
-# Database
-SQLAlchemy>=2.0.0
-
-# PDF Report Generation
-reportlab>=4.2.0
-
-# Data handling & exports
-pandas>=2.2.0
-openpyxl>=3.1.0
-
-# Date/time utilities
-python-dateutil>=2.9.0
+# VC Accountant runtime dependencies. Versions are pinned.
+PyQt6==6.7.1
+SQLAlchemy==2.0.44
+alembic==1.14.1
+platformdirs==4.3.6
