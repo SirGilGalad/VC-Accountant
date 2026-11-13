@@ -23,7 +23,7 @@ On Windows, `run_vca.bat` does the same thing from this folder. Company files us
 
 ```
 core/            schema, services, queries, staged import
-packs/           industry packs (later phases)
+packs/           construction accounts and cost codes; other packs later
 desktop/         PyQt6 windows
 migrations/      Alembic revision for SQLite and Postgres
 tests/           pytest

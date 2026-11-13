@@ -22,6 +22,7 @@ def create_account(
     subtype: str | None = None,
     parent_id: int | None = None,
     notes: str | None = None,
+    pack_id: str | None = None,
 ) -> int:
     cleaned = name.strip()
     if not cleaned:
@@ -58,6 +59,7 @@ def create_account(
             is_active=True,
             is_system=False,
             notes=notes,
+            pack_id=pack_id,
         )
     )
     account_id = int(result.inserted_primary_key[0])

@@ -5,7 +5,9 @@ from __future__ import annotations
 from PyQt6.QtWidgets import (
     QComboBox,
     QFormLayout,
+    QLabel,
     QLineEdit,
+    QVBoxLayout,
     QWizard,
     QWizardPage,
 )
@@ -21,9 +23,10 @@ class NewCompanyWizard(QWizard):
         self.company: dict = {}
         prefill = load_prefill()
         self.addPage(self._industry(prefill))
-        self.addPage(self._identity())
+        self.addPage(self._identity(prefill))
         self.addPage(self._address(prefill))
         self.addPage(self._contact(prefill))
+        self.addPage(ReviewPage(self))
 
     def _industry(self, prefill: dict) -> QWizardPage:
         page = QWizardPage()
@@ -38,7 +41,7 @@ class NewCompanyWizard(QWizard):
         form.addRow("Pack", self.pack)
         return page
 
-    def _identity(self) -> QWizardPage:
+    def _identity(self, prefill: dict) -> QWizardPage:
         page = QWizardPage()
         page.setTitle("Legal identity")
         form = QFormLayout(page)
@@ -62,6 +65,16 @@ class NewCompanyWizard(QWizard):
         self.method = QComboBox()
         self.method.addItem("Accrual", "accrual")
         self.method.addItem("Cash", "cash")
+        month = prefill.get("fiscal_year_start_month")
+        if month:
+            found = self.fy.findData(int(month))
+            if found >= 0:
+                self.fy.setCurrentIndex(found)
+        method = prefill.get("accounting_method")
+        if method:
+            found = self.method.findData(method)
+            if found >= 0:
+                self.method.setCurrentIndex(found)
         form.addRow("Company name", self.name)
         form.addRow("Legal name", self.legal_name)
         form.addRow("EIN (optional)", self.ein)
@@ -132,3 +145,19 @@ class NewCompanyWizard(QWizard):
     def remember(self) -> None:
         data = self.collected()
         save_prefill(data)
+
+
+class ReviewPage(QWizardPage):
+    def __init__(self, wizard: NewCompanyWizard):
+        super().__init__()
+        self.owner = wizard
+        self.setTitle("Review")
+        self.label = QLabel("Review the company, then create it.")
+        self.label.setWordWrap(True)
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.label)
+
+    def initializePage(self) -> None:  # noqa: N802
+        data = self.owner.collected()
+        lines = [f"{key}: {value if value is not None else ''}" for key, value in data.items()]
+        self.label.setText("\n".join(lines))

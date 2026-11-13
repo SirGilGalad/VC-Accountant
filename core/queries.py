@@ -133,9 +133,82 @@ def retainage_held(conn: Connection, job_id: int) -> int:
     return int(row[0] or 0)
 
 
+def job_cost_detail(conn: Connection, job_id: int, as_of: date | None = None) -> list[dict]:
+    """Cost by cost code and account. Both are shown so a materials line is not only a number."""
+    from core.schema import cost_codes
+
+    joined, cond = _posted_lines(as_of)
+    net = func.coalesce(func.sum(journal_lines.c.debit_cents - journal_lines.c.credit_cents), 0)
+    rows = conn.execute(
+        select(
+            cost_codes.c.code,
+            cost_codes.c.name.label("cost_code_name"),
+            accounts.c.number,
+            accounts.c.name.label("account_name"),
+            net.label("cents"),
+        )
+        .select_from(joined.outerjoin(cost_codes, cost_codes.c.id == journal_lines.c.cost_code_id))
+        .where(
+            cond,
+            journal_lines.c.job_id == job_id,
+            accounts.c.type.in_(("cost_of_sales", "expense")),
+        )
+        .group_by(cost_codes.c.code, cost_codes.c.name, accounts.c.number, accounts.c.name)
+        .order_by(cost_codes.c.code, accounts.c.number)
+    ).all()
+    return [
+        {
+            "cost_code": row.code,
+            "cost_code_name": row.cost_code_name,
+            "account_number": row.number,
+            "account_name": row.account_name,
+            "cents": int(row.cents or 0),
+        }
+        for row in rows
+    ]
+
+
 def over_under_billing(conn: Connection, job_id: int) -> dict:
-    """Budgets arrive with the construction pack. Until then there is no earned amount."""
-    return {"status": "needs_budget", "amount_cents": None}
+    """Earned is cost divided by budget, times the contract. Underbilled is earned minus billed."""
+    from core.schema import job_budgets, jobs
+
+    job = conn.execute(select(jobs).where(jobs.c.id == job_id)).one()
+    budget = int(
+        conn.execute(
+            select(func.coalesce(func.sum(job_budgets.c.amount_cents), 0)).where(job_budgets.c.job_id == job_id)
+        ).scalar()
+        or 0
+    )
+    cost = sum(row["cents"] for row in job_cost(conn, job_id))
+    billings = job_billings(conn, job_id)
+    contract = int(job.contract_amount_cents or 0)
+    if budget <= 0:
+        return {
+            "status": "needs_budget",
+            "amount_cents": None,
+            "budget_cents": budget,
+            "cost_cents": cost,
+            "contract_cents": contract,
+            "billings_cents": billings,
+            "earned_cents": 0,
+        }
+    earned = cost * contract // budget
+    gap = earned - billings
+    if gap > 0:
+        status = "underbilled"
+    elif gap < 0:
+        status = "overbilled"
+    else:
+        status = "even"
+    return {
+        "status": status,
+        "amount_cents": gap,
+        "budget_cents": budget,
+        "cost_cents": cost,
+        "contract_cents": contract,
+        "billings_cents": billings,
+        "earned_cents": earned,
+    }
 
 
 def accumulated_depreciation(conn: Connection, asset_id: int, as_of: date | None = None) -> int:
@@ -154,3 +227,106 @@ def accumulated_depreciation(conn: Connection, asset_id: int, as_of: date | None
         )
     ).one()
     return int(row[0] or 0)
+
+
+def format_minutes(minutes: int) -> str:
+    hours, rest = divmod(int(minutes), 60)
+    return f"{hours} h {rest} m"
+
+
+def money_plain(cents: int) -> str:
+    sign = "-" if cents < 0 else ""
+    whole, rest = divmod(abs(int(cents)), 100)
+    return f"{sign}${whole:,}.{rest:02d}"
+
+
+def home_status(conn: Connection, company_id: int, today: date, pack_id: str) -> dict:
+    """Live lines for the company home. Time is unused outside construction."""
+    from core.schema import bank_accounts, jobs, reconciliations, time_entries
+
+    invoices = conn.execute(
+        select(journal_entries.c.entry_date, journal_lines.c.debit_cents)
+        .select_from(
+            journal_lines.join(journal_entries, journal_entries.c.id == journal_lines.c.entry_id).join(
+                accounts, accounts.c.id == journal_lines.c.account_id
+            )
+        )
+        .where(
+            journal_entries.c.company_id == company_id,
+            journal_entries.c.status == "posted",
+            journal_entries.c.source_type == "invoice",
+            accounts.c.number == "1100",
+        )
+    ).all()
+    due = sum(int(row.debit_cents) for row in invoices)
+    late = sum(1 for row in invoices if (today - row.entry_date).days > 30)
+    active_jobs = conn.execute(
+        select(jobs.c.id).where(jobs.c.company_id == company_id, jobs.c.status == "active")
+    ).all()
+    under = 0
+    for row in active_jobs:
+        figure = over_under_billing(conn, row.id)
+        if figure["status"] == "underbilled":
+            under += 1
+    week_start = today.fromordinal(today.toordinal() - today.weekday())
+    week_end = week_start.fromordinal(week_start.toordinal() + 6)
+    times = conn.execute(
+        select(time_entries.c.minutes, time_entries.c.status).where(
+            time_entries.c.company_id == company_id,
+            time_entries.c.work_date >= week_start,
+            time_entries.c.work_date <= week_end,
+        )
+    ).all()
+    entered = sum(int(row.minutes) for row in times)
+    unapproved = sum(int(row.minutes) for row in times if row.status != "approved")
+    horizon = today.fromordinal(today.toordinal() + 7)
+    bills = conn.execute(
+        select(journal_entries.c.entry_date, journal_lines.c.credit_cents)
+        .select_from(
+            journal_lines.join(journal_entries, journal_entries.c.id == journal_lines.c.entry_id).join(
+                accounts, accounts.c.id == journal_lines.c.account_id
+            )
+        )
+        .where(
+            journal_entries.c.company_id == company_id,
+            journal_entries.c.status == "posted",
+            journal_entries.c.source_type == "bill",
+            accounts.c.number == "2000",
+            journal_entries.c.entry_date <= horizon,
+        )
+    ).all()
+    bill_total = sum(int(row.credit_cents) for row in bills)
+    reconciled = conn.execute(
+        select(reconciliations.c.finished_at)
+        .select_from(
+            reconciliations.join(bank_accounts, bank_accounts.c.id == reconciliations.c.bank_account_id).join(
+                accounts, accounts.c.id == bank_accounts.c.account_id
+            )
+        )
+        .where(
+            accounts.c.company_id == company_id,
+            accounts.c.number == "1010",
+            reconciliations.c.status == "finished",
+        )
+        .order_by(reconciliations.c.finished_at.desc())
+    ).first()
+    if reconciled is None or reconciled.finished_at is None:
+        banking = "Operating Checking has not been reconciled"
+    else:
+        stamp = reconciled.finished_at
+        shown = stamp.date().isoformat() if hasattr(stamp, "date") else str(stamp)[:10]
+        banking = f"Operating Checking last reconciled {shown}"
+    time_line = (
+        f"This week: {format_minutes(entered)} entered, {format_minutes(unapproved)} not approved"
+        if pack_id == "construction"
+        else "Time is not used for this company."
+    )
+    return {
+        "bill": f"{len(invoices)} invoices open · {money_plain(due)} due · {late} over 30 days",
+        "job": f"{len(active_jobs)} active jobs · {under} underbilled",
+        "time": time_line,
+        "time_used": pack_id == "construction",
+        "pay": f"{len(bills)} bills due in 7 days · {money_plain(bill_total)}",
+        "banking": banking,
+        "reports": "Job profitability, over/under billing, and profit and loss",
+    }

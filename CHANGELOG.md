@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-12 — Phase 3: construction, layout, wizard
+
+- A construction company gets the job-cost accounts and the starter cost codes. A general company does not.
+- Job cost, billings, and over/under billing are computed. Time entered as hours:minutes is stored as minutes and is not posted until payroll exists.
+- Company Home is six lanes beside the chart. The window opens maximized. Layout sizes are remembered per member, and a copy of the file keeps them.
+- The wizard has a review page. Address and contact can prefill. Name and EIN do not, and the prefill file is outside the working folder.
+- Reports export to CSV and PDF.
+
+Still refused: bank feeds, payments that leave the books, tax transmission, reading a company file directly, online booking, and real sign-in. Those wait on a certified connection or on VCP Security Bot.
+
 ## 2026-11-12 — Phase 2: import
 
 - Lists, transaction detail (CSV and XLSX), and a trial balance stage into their own tables. Nothing is posted until the staged trial balance matches the source trial balance to the cent and there are no error issues.

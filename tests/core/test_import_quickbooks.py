@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
-from sqlalchemy import func, insert, select, text
+from sqlalchemy import func, select, text
 
 from core.import_quickbooks.money import parse_amount
 from core.import_quickbooks.quickbooks import AlreadyImported, QuickBooksImport
@@ -118,13 +118,8 @@ def test_fixture_ties_then_imports_and_matches_the_source_trial_balance(company)
     with engine.begin() as conn:
         code_id = int(
             conn.execute(
-                insert(cost_codes).values(
-                    company_id=company_id,
-                    code="03",
-                    name="Concrete",
-                    category="material",
-                )
-            ).inserted_primary_key[0]
+                select(cost_codes.c.id).where(cost_codes.c.company_id == company_id, cost_codes.c.code == "03")
+            ).scalar()
         )
     importer.map_class("03 Concrete", code_id)
     batch_id = importer.stage(_full_files(), CUTOFF, label="Red Mesa 2026")
