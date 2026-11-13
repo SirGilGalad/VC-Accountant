@@ -70,6 +70,7 @@ def test_row_policy_hides_the_other_tenant():
     finally:
         with admin.begin() as conn:
             for company_id in (alpha_id, beta_id):
+                conn.execute(text("DELETE FROM audit_log WHERE company_id = :id"), {"id": company_id})
                 conn.execute(text("DELETE FROM accounts WHERE company_id = :id"), {"id": company_id})
                 conn.execute(text("DELETE FROM members WHERE company_id = :id"), {"id": company_id})
                 tenant = conn.execute(
