@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-12 — Phase 4: the other packs
+
+- Property, resort, professional services, retail, manufacturing, restaurant, agriculture, and nonprofit companies seed their accounts on the shared chart.
+- A pack number that already belongs to the base chart stays put. The pack account takes the next free number in that family. Payroll, wages, and rent expense are unchanged.
+- A property company can charge rent and record a security deposit. The document index stores where a record is, not the file.
+- A resort company can hold a site. Overlapping holds are refused. A guest deposit posts only when you record one. Nothing is booked online.
+
+Still refused: bank feeds, payments that leave the books, tax transmission, reading a company file directly, online booking, and real sign-in. Those wait on a certified connection or on VCP Security Bot.
+
 ## 2026-11-12 — Phase 3: construction, layout, wizard
 
 - A construction company gets the job-cost accounts and the starter cost codes. A general company does not.
