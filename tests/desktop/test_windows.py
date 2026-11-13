@@ -31,8 +31,10 @@ def test_wizard_offers_exactly_the_pack_list(qtbot, app):
 
 
 def test_close_company_returns_to_launch(qtbot, app, tmp_path, monkeypatch):
-    monkeypatch.setattr("core.services.preferences.data_dir", lambda: tmp_path / "data")
-    monkeypatch.setattr("desktop.launch.data_dir", lambda: tmp_path / "data", raising=False)
+    folder = tmp_path / "data"
+    folder.mkdir()
+    monkeypatch.setattr("core.services.preferences.data_dir", lambda: folder)
+    monkeypatch.setattr("desktop.launch.data_dir", lambda: folder, raising=False)
     launch = LaunchWindow()
     qtbot.addWidget(launch)
     launch.show()
