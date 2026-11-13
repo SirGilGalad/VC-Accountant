@@ -93,6 +93,23 @@ def set_preference(conn: Connection, company_id: int, member_id: int, key: str, 
     )
 
 
+def remembering_layout(conn: Connection, company_id: int, member_id: int) -> bool:
+    value = get_preference(conn, company_id, member_id, "layout.remember")
+    if value is None:
+        return True
+    return bool(value)
+
+
+def reset_layout(conn: Connection, company_id: int, member_id: int) -> None:
+    conn.execute(
+        delete(ui_preferences).where(
+            ui_preferences.c.company_id == company_id,
+            ui_preferences.c.member_id == member_id,
+            ui_preferences.c.key.in_(("home.splitter", "coa.columns", "coa.expanded")),
+        )
+    )
+
+
 def get_preference(conn: Connection, company_id: int, member_id: int, key: str):
     row = conn.execute(
         select(ui_preferences.c.value_json).where(

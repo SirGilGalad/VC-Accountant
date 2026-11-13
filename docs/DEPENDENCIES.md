@@ -7,7 +7,8 @@
 | alembic | Migrations in `migrations/`, run when a company file opens. |
 | platformdirs | User data directory for prefill and recent companies. Not the tax id. |
 | openpyxl | Reads .xlsx report exports in the importer. |
+| reportlab | Writes PDF files for the reports. |
 
 Dev-only: pytest, pytest-qt, hypothesis, ruff, and psycopg (Postgres tests when `VCA_TEST_PG_URL` is set).
 
-pandas and ReportLab are not dependencies. PDF reports arrive with the layout phase.
+pandas is not a dependency.

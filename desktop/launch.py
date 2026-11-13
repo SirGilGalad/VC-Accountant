@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -25,7 +26,7 @@ from core.branding import APP_NAME, FILE_EXTENSION
 from core.legacy import is_legacy, migrate_vtg
 from core.services.companies import NewCompany, create_company_file, load_company
 from core.db import upgrade_sqlite
-from core.services.preferences import load_recent, remember_recent
+from core.services.preferences import load_recent, recent_path, remember_recent
 from desktop.company_window import CompanyWindow
 from desktop.views.import_wizard import attach_launch_button
 from desktop.wizard import NewCompanyWizard
@@ -70,6 +71,9 @@ class LaunchWindow(QMainWindow):
         self.table.setHorizontalHeaderLabels(["Name", "Last used", "Size"])
         self.table.cellDoubleClicked.connect(self._open_recent_row)
         layout.addWidget(self.table)
+        remove = QPushButton("Remove")
+        remove.clicked.connect(self._remove_recent)
+        layout.addWidget(remove)
         self.setCentralWidget(root)
         self.refresh_recent()
 
@@ -87,6 +91,18 @@ class LaunchWindow(QMainWindow):
                 shown = "File not found"
             self.table.setItem(index, 2, QTableWidgetItem(shown))
             self.table.item(index, 0).setData(Qt.ItemDataRole.UserRole, str(path))
+
+    def _remove_recent(self) -> None:
+        row = self.table.currentRow()
+        if row < 0:
+            return
+        item = self.table.item(row, 0)
+        if item is None:
+            return
+        path = item.data(Qt.ItemDataRole.UserRole)
+        kept = [entry for entry in load_recent() if entry.get("path") != path]
+        recent_path().write_text(json.dumps(kept), encoding="utf-8")
+        self.refresh_recent()
 
     def new_company(self) -> None:
         wizard = NewCompanyWizard(self)

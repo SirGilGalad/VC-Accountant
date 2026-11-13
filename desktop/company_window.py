@@ -12,7 +12,6 @@ from PyQt6.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPushButton,
-    QSplitter,
     QStackedWidget,
     QTableWidget,
     QTreeWidget,
@@ -28,8 +27,10 @@ from core.services.accounts import create_account, list_accounts
 from core.services.backup import backup_file
 from core.services.directory import list_jobs, list_parties
 from desktop.forms import FORM_STATUS
+from desktop.home import HomePane
 from desktop.views.import_wizard import add_import_action
 from desktop.views.review import fill_table, money, show_register
+from desktop import workflow
 
 NAV = (
     "Company",
@@ -53,6 +54,7 @@ class CompanyWindow(QMainWindow):
         self.company = company_row
         self._exiting = False
         self.setWindowTitle(f"{APP_NAME} — {company_row.name}")
+        self.setWindowState(Qt.WindowState.WindowMaximized)
         self._build()
         self.showMaximized()
 
@@ -62,26 +64,61 @@ class CompanyWindow(QMainWindow):
             menu = menubar.addMenu(name)
             if name == "Company":
                 menu.addAction("Company Home", lambda: self.stack.setCurrentIndex(0))
+                menu.addAction("Company Information", lambda: workflow.company_info(self))
+                menu.addAction("Preferences", lambda: workflow.preferences(self))
                 menu.addAction("Back Up Company…", self._backup)
                 menu.addAction("Save a Copy As…", self._copy)
+                menu.addAction("Restore…", lambda: workflow.restore(self))
                 add_import_action(menu, self)
+                menu.addAction("Open Another Company…", lambda: workflow.open_another(self))
                 menu.addAction("Close Company", self.close)
                 menu.addAction("Help", self._help)
                 menu.addAction("About", self._about)
                 menu.addAction("Exit", self._exit)
+            elif name == "Customers":
+                menu.addAction("Customer list", lambda: self._show_section("Customers"))
+                menu.addAction("New invoice or progress bill", self.new_invoice)
+                menu.addAction("Receive payment", self.receive_payment)
+                menu.addAction("Statements", lambda: workflow.statements(self))
+            elif name == "Vendors":
+                menu.addAction("Vendor list", lambda: self._show_section("Vendors"))
+                menu.addAction("Enter bill", self.enter_bill)
+                menu.addAction("Pay bills", self.pay_bills)
+                menu.addAction("1099 summary", lambda: workflow.form_draft(self, "1099 summary"))
+            elif name == "Jobs":
+                menu.addAction("Job list", lambda: self._show_section("Jobs"))
+                menu.addAction("New job", self.new_job)
+                menu.addAction("Job cost", self.job_cost)
+                menu.addAction("Over/under billing", lambda: self.show_report("wip"))
             elif name == "Employees":
+                menu.addAction("Employee list", lambda: self._show_section("Employees"))
+                menu.addAction("Time", self.enter_time)
+                menu.addAction("Payroll", lambda: workflow.form_draft(self, "Payroll"))
                 menu.addAction("Payroll forms", lambda: self.stack.setCurrentWidget(self.forms_page))
+            elif name == "Banking":
+                menu.addAction("Bank accounts", lambda: workflow.bank_accounts(self))
+                menu.addAction("Enter statement", self.enter_statement)
+                menu.addAction("Reconcile", self.reconcile)
+                menu.addAction("Transfers", lambda: workflow.transfer(self))
+                menu.addAction("Deposits", lambda: workflow.deposit(self))
             elif name == "Reports":
-                menu.addAction("Trial Balance", lambda: self._show_section("Reports"))
+                menu.addAction("Trial Balance", lambda: self.show_report("trial"))
+                menu.addAction("Balance Sheet", lambda: self.show_report("balance"))
+                menu.addAction("Profit & Loss", lambda: self.show_report("profit"))
                 menu.addAction("General Ledger", self._pick_register)
+                menu.addAction("Job Cost", self.job_cost)
+                menu.addAction("Job Profitability", lambda: self.show_report("job_profitability"))
+                menu.addAction("Over/Under Billing", lambda: self.show_report("wip"))
+                menu.addAction("Aging", lambda: self.show_report("aging"))
             elif name == "Lists":
                 menu.addAction("Chart of Accounts", lambda: self._show_section("Lists"))
+                menu.addAction("Cost Codes", lambda: workflow.show_cost_codes(self))
                 menu.addAction("Customers", lambda: self._show_section("Customers"))
                 menu.addAction("Vendors", lambda: self._show_section("Vendors"))
                 menu.addAction("Employees", lambda: self._show_section("Employees"))
                 menu.addAction("Jobs", lambda: self._show_section("Jobs"))
-            else:
-                menu.addAction(name, lambda n=name: self._show_section(n))
+                menu.addAction("Terms", lambda: workflow.terms(self))
+                menu.addAction("Periods", lambda: workflow.periods(self))
 
         root = QWidget()
         layout = QHBoxLayout(root)
@@ -113,31 +150,10 @@ class CompanyWindow(QMainWindow):
         self.setCentralWidget(root)
         self.statusBar().showMessage(f"{self.company.name}")
         self.refresh_lists()
+        self._restore_layout()
 
     def _home(self) -> QWidget:
-        page = QWidget()
-        splitter = QSplitter(Qt.Orientation.Horizontal)
-        left = QLabel(
-            "Who you bill, the job, time, who you pay, banking, and reports "
-            "share this ledger. Balances come from posted lines."
-        )
-        left.setWordWrap(True)
-        self.tree = QTreeWidget()
-        self.tree.setHeaderLabels(["Number", "Name", "Type", "Active"])
-        self.tree.setColumnCount(4)
-        add = QPushButton("Add account")
-        add.clicked.connect(self._add_account)
-        right = QWidget()
-        right_layout = QVBoxLayout(right)
-        right_layout.addWidget(QLabel("Chart of accounts"))
-        right_layout.addWidget(self.tree)
-        right_layout.addWidget(add)
-        splitter.addWidget(left)
-        splitter.addWidget(right)
-        self.tree.itemDoubleClicked.connect(self._open_register)
-        layout = QVBoxLayout(page)
-        layout.addWidget(splitter)
-        return page
+        return HomePane(self)
 
     def _forms(self) -> QWidget:
         page = QWidget()
@@ -220,7 +236,7 @@ class CompanyWindow(QMainWindow):
             employees = list_parties(conn, self.company_id, "employee")
             job_rows = list_jobs(conn, self.company_id)
             trial_rows = trial_balance(conn, self.company_id)
-        self._fill_tree(self.tree, rows, balances, False)
+        self._fill_tree(self.tree, rows, balances, True)
         if hasattr(self, "list_tree"):
             self._fill_tree(self.list_tree, rows, balances, True)
         fill_table(
@@ -329,6 +345,73 @@ class CompanyWindow(QMainWindow):
             return
         self.refresh_lists()
 
+    def new_invoice(self) -> None:
+        workflow.progress_bill(self)
+
+    def receive_payment(self) -> None:
+        workflow.receive_payment(self)
+
+    def new_job(self) -> None:
+        workflow.new_job(self)
+
+    def open_job(self) -> None:
+        workflow.open_job(self)
+
+    def job_cost(self) -> None:
+        workflow.job_cost(self)
+
+    def enter_time(self) -> None:
+        workflow.enter_time(self)
+
+    def approve_time(self) -> None:
+        workflow.approve_time(self)
+
+    def enter_bill(self) -> None:
+        workflow.vendor_bill(self)
+
+    def pay_bills(self) -> None:
+        workflow.pay_bills(self)
+
+    def enter_statement(self) -> None:
+        workflow.enter_statement(self)
+
+    def reconcile(self) -> None:
+        workflow.reconcile(self)
+
+    def show_report(self, kind: str) -> None:
+        workflow.show_report(self, kind)
+
+    def _save_layout(self) -> None:
+        if not hasattr(self, "splitter"):
+            return
+        from core.services.preferences import remembering_layout, set_preference
+
+        with self.launch.engine.begin() as conn:
+            if not remembering_layout(conn, self.company_id, self.member_id):
+                return
+            set_preference(conn, self.company_id, self.member_id, "home.splitter", self.splitter.sizes())
+            set_preference(
+                conn,
+                self.company_id,
+                self.member_id,
+                "coa.columns",
+                [self.tree.columnWidth(index) for index in range(self.tree.columnCount())],
+            )
+
+    def _restore_layout(self) -> None:
+        from core.services.preferences import get_preference, remembering_layout
+
+        with self.launch.engine.connect() as conn:
+            if not remembering_layout(conn, self.company_id, self.member_id):
+                return
+            sizes = get_preference(conn, self.company_id, self.member_id, "home.splitter")
+            widths = get_preference(conn, self.company_id, self.member_id, "coa.columns")
+        if sizes:
+            self.splitter.setSizes([int(value) for value in sizes])
+        if widths:
+            for index, width in enumerate(widths):
+                self.tree.setColumnWidth(index, int(width))
+
     def _backup(self) -> None:
         dest, _ = QFileDialog.getSaveFileName(self, "Back Up Company", str(self.path.with_suffix(".vca.bak")))
         if not dest:
@@ -357,6 +440,7 @@ class CompanyWindow(QMainWindow):
         self.close()
 
     def closeEvent(self, event) -> None:  # noqa: N802
+        self._save_layout()
         if self._exiting:
             event.accept()
             from PyQt6.QtWidgets import QApplication

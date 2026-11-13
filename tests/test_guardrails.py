@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_requirements_are_imported():
     import alembic  # noqa: F401
     import platformdirs  # noqa: F401
+    import reportlab  # noqa: F401
     import sqlalchemy  # noqa: F401
 
     text = (ROOT / "requirements.txt").read_text(encoding="utf-8")
@@ -17,7 +18,6 @@ def test_requirements_are_imported():
     assert "platformdirs" in text
     assert "PyQt6" in text
     assert "pandas" not in text.lower()
-    assert "reportlab" not in text.lower()
 
 
 def test_company_data_check_flags_a_company_file(tmp_path: Path):

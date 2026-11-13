@@ -8,11 +8,14 @@ import pytest
 pytest.importorskip("PyQt6.QtWidgets", exc_type=ImportError)
 pytest.importorskip("pytestqt", exc_type=ImportError)
 
-from PyQt6.QtWidgets import QApplication, QPushButton
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication, QLabel, QPushButton, QTreeWidget
 
 from core.packs import PACK_IDS
 from core.services.companies import NewCompany, create_company_file
+from core.services.preferences import save_prefill
 from desktop.forms import FORM_STATUS
+from desktop.home import LANE_TITLES
 from desktop.launch import LaunchWindow
 from desktop.wizard import NewCompanyWizard
 
@@ -63,3 +66,47 @@ def test_close_company_returns_to_launch(qtbot, app, tmp_path, monkeypatch):
     assert QApplication.instance() is not None
     labels = [button.text() for button in launch.findChildren(QPushButton)]
     assert "Import from QuickBooks" in labels
+    assert company.windowState() & Qt.WindowState.WindowMaximized
+    titles = [label.text() for label in company.findChildren(QLabel) if label.objectName() == "lane-title"]
+    assert titles == list(LANE_TITLES)
+    assert company.splitter.orientation() == Qt.Orientation.Horizontal
+    assert company.splitter.widget(1).findChild(QTreeWidget) is company.tree
+    long_name = "N" * 70
+    company.name_label.setText(long_name)
+    assert company.name_label.wordWrap()
+    assert company.name_label.alignment() & Qt.AlignmentFlag.AlignHCenter
+    assert company.name_label.text() == long_name
+    assert "…" not in company.name_label.text()
+    side = [button.text() for button in company.findChildren(QPushButton)]
+    for name in (
+        "Company",
+        "Customers",
+        "Vendors",
+        "Jobs",
+        "Employees",
+        "Banking",
+        "Reports",
+        "Lists",
+    ):
+        assert name in side
+
+
+def test_wizard_prefills_address_but_not_name(qtbot, app, tmp_path, monkeypatch):
+    monkeypatch.setattr("core.services.preferences.data_dir", lambda: tmp_path)
+    monkeypatch.setattr("desktop.wizard.load_prefill", lambda: {
+        "address1": "100 Sample Way",
+        "city": "Kanab",
+        "phone": "555-0100",
+        "contact_name": "Pat Sample",
+        "pack_id": "construction",
+        "fiscal_year_start_month": 4,
+        "accounting_method": "cash",
+    })
+    save_prefill({"address1": "100 Sample Way", "ein": "XX-XXXXXXX", "name": "Hidden"})
+    wizard = NewCompanyWizard()
+    qtbot.addWidget(wizard)
+    assert wizard.name.text() == ""
+    assert wizard.legal_name.text() == ""
+    assert wizard.ein.text() == ""
+    assert wizard.address1.text() == "100 Sample Way"
+    assert wizard.page(4).title() == "Review"

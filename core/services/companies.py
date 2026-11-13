@@ -13,7 +13,7 @@ from sqlalchemy.engine import Connection, Engine
 from core.chart import seed_base_chart
 from core.db import upgrade_sqlite
 from core.errors import LedgerError
-from core.packs import PACK_IDS
+from core.packs import PACK_IDS, apply_pack
 from core.schema import companies, members, tenants
 from core.services.audit import write_audit
 
@@ -98,6 +98,7 @@ def insert_company(conn: Connection, info: NewCompany, *, os_username: str | Non
         )
     ).inserted_primary_key[0]
     seed_base_chart(conn, int(company_id))
+    apply_pack(conn, int(company_id), int(member_id), info.pack_id)
     write_audit(
         conn,
         company_id=int(company_id),

@@ -546,3 +546,13 @@ import_mappings = Table(
     Column("target_id", Integer, nullable=False),
     UniqueConstraint("company_id", "source_system", "source_key", name="uq_import_mappings"),
 )
+
+job_budgets = Table(
+    "job_budgets",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("job_id", Integer, ForeignKey("jobs.id"), nullable=False),
+    Column("cost_code_id", Integer, ForeignKey("cost_codes.id"), nullable=False),
+    Column("amount_cents", BigInteger, nullable=False),
+    UniqueConstraint("job_id", "cost_code_id", name="uq_job_budgets"),
+)

@@ -63,3 +63,17 @@ def test_prefill_drops_ein(tmp_path, monkeypatch):
     assert "ein" not in saved
     assert "name" not in saved
     assert load_prefill()["address1"] == "100 Sample Way"
+
+
+def test_prefill_is_not_written_into_the_working_folder(tmp_path, monkeypatch):
+    work = tmp_path / "work"
+    data = tmp_path / "appdata"
+    work.mkdir()
+    data.mkdir()
+    monkeypatch.chdir(work)
+    monkeypatch.setattr("core.services.preferences.data_dir", lambda: data)
+    save_prefill({"address1": "100 Sample Way", "city": "Kanab", "name": "Hidden", "ein": "XX-XXXXXXX"})
+    assert list(work.glob("*.json")) == []
+    saved = json.loads((data / "last_company_details.json").read_text(encoding="utf-8"))
+    assert "ein" not in saved
+    assert "name" not in saved
