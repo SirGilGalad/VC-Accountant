@@ -8,6 +8,8 @@
 | platformdirs | User data directory for prefill and recent companies. Not the tax id. |
 | openpyxl | Reads .xlsx report exports in the importer. |
 | reportlab | Writes PDF files for the reports. |
+| fastapi | JSON API in `web/api`. Development only. |
+| uvicorn | Serves that API on 127.0.0.1. |
 
 Dev-only: pytest, pytest-qt, hypothesis, ruff, and psycopg (Postgres tests when `VCA_TEST_PG_URL` is set).
 

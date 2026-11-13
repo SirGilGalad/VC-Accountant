@@ -38,6 +38,7 @@ class NewCompany:
     contact_email: str | None = None
     fiscal_year_start_month: int = 1
     accounting_method: str = "accrual"
+    subdomain: str | None = None
 
 
 def create_company_file(path: Path | str, info: NewCompany) -> tuple[Engine, int, int]:
@@ -59,8 +60,9 @@ def insert_company(conn: Connection, info: NewCompany, *, os_username: str | Non
     method = info.accounting_method.strip().lower()
     if method not in {"accrual", "cash"}:
         raise LedgerError("Accounting method must be accrual or cash")
+    subdomain = (info.subdomain or "").strip() or None
     tenant_id = conn.execute(
-        insert(tenants).values(subdomain=None, display_name=info.name.strip())
+        insert(tenants).values(subdomain=subdomain, display_name=info.name.strip())
     ).inserted_primary_key[0]
     company_id = conn.execute(
         insert(companies).values(

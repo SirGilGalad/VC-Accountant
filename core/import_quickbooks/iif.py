@@ -1,4 +1,4 @@
-"""Lists export. The row type is the first token, not a data column."""
+"""Lists export. The row type is the first field, not a data column."""
 
 from __future__ import annotations
 
@@ -115,11 +115,11 @@ def parse_iif(text: str, file_name: str) -> dict:
             fields = split_fields(line)
         except MalformedFile as exc:
             raise MalformedFile(str(exc), row_number) from exc
-        token = fields[0].strip()
-        if token.startswith("!"):
+        kind = fields[0].strip()
+        if kind.startswith("!"):
             headers = [item.strip() for item in fields[1:]]
             continue
-        if token in {"ENDTRNS", "ENDSPL", "TRNS", "SPL"}:
+        if kind in {"ENDTRNS", "ENDSPL", "TRNS", "SPL"}:
             issues.append(
                 {
                     "severity": "info",
@@ -132,7 +132,7 @@ def parse_iif(text: str, file_name: str) -> dict:
         if headers is None:
             raise MalformedFile(f"{file_name} has a data row before its header", row_number)
         record = _record(headers, fields[1:])
-        kind = token.upper()
+        kind = kind.upper()
         if kind == "ACCNT":
             accounts.append(_account(record, file_name, row_number, issues))
         elif kind == "CUST":

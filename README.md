@@ -24,6 +24,7 @@ On Windows, `run_vca.bat` does the same thing from this folder. Company files us
 ```
 core/            schema, services, queries, staged import
 packs/           industry accounts; property and resort also have operational screens
+web/             development API and screens; not for a live company yet
 desktop/         PyQt6 windows
 migrations/      Alembic revision for SQLite and Postgres
 tests/           pytest
