@@ -1,44 +1,49 @@
-# Vantage Core - Python .gitignore
+# VC Accountant
 
-# Virtual environment
 .venv/
 venv/
 ENV/
-
-# Python cache and compiled files
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Database / Company files (never commit real company data)
+# Company files and exports. Fixtures under tests/fixtures/ are the exception.
+*.vca
+*.vtg
+*.vca.bak
+*.QBW
+*.QBB
+*.QBM
+*.QBX
+*.TLG
+*.ND
+*.iif
+*.csv
+*.xlsx
+!tests/fixtures/**
+local-imports/
+Backups/
 *.vantage
 *.cdf
 *.db
-test_*.cdf
+*.sqlite
 
-# IDE and editor folders
+last_company.json
+recent_companies.json
+.env
+.env.*
+
 .vscode/
 .idea/
-
-# Distribution / packaging
 dist/
 build/
 *.egg-info/
-
-# Logs and temporary files
 *.log
 *.tmp
 *.temp
-
-# OS generated files
 .DS_Store
 Thumbs.db
-
-# pip cache (optional but recommended)
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Local backups and last-used company state
-Main Backups/
-last_company.json
-recent_companies.json
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/

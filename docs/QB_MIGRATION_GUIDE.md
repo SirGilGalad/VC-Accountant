@@ -1,6 +1,7 @@
-# QuickBooks to Construction Desktop Finance (CDF) Migration Guide
+# Import from QuickBooks
 
-**Goal:** Move your large, long-standing QuickBooks company file (Glen Canyon Construction LLC — in use since 1998) into CDF with as much historical data, job history, balances, and tax mappings as possible.
+**Goal:** Move a long-standing QuickBooks company, including Glen Canyon Construction LLC (in use since 1998), into VC Accountant with the history and balances the owner chooses to export. Nothing is called imported until the staged trial balance ties to the QuickBooks trial balance to the cent.
+
 
 **Important Reality Check**
 Directly reading `.QBW` or `.QBB` files is not practical. We use QuickBooks' own export tools (which are reliable) + our smart Import Wizard.
@@ -51,7 +52,7 @@ We will make the process as smooth and complete as possible. The importer is bei
 
 Once you have the exported files, you will use the **CDF Import Wizard** (PyQt6 interface we are developing):
 
-1. Open CDF → File → **Import from QuickBooks**
+1. Open VC Accountant → **Import from QuickBooks** (this command is hidden until the import phase).
 2. Choose import type:
    - **Lists (IIF)** — Chart of Accounts, Customers, Vendors, Employees, Jobs
    - **Transactions (CSV/Excel)** — Historical journal entries, invoices, bills, checks, etc.
@@ -86,13 +87,10 @@ We will build options in the Import Wizard for exactly this kind of selective + 
 
 ---
 
-## Advanced Option: Direct Extraction (If QB is Still Installed)
+## Company file reading is not in this release
 
-If you keep QuickBooks installed on the same machine during transition, we can later add a **"Direct from Open QB File"** button.
+Import uses files exported from QuickBooks (lists, transaction detail, and a trial balance). Reading the company file directly is a later decision. It is not built, and this release does not include a connection into the running program.
 
-This would use Python's `pywin32` + QuickBooks COM interface to read data directly from the running company file. It can sometimes pull more complete current balances and certain list data than IIF exports.
-
-We can add this in Phase 1 or 2 if you want maximum fidelity.
 
 ---
 

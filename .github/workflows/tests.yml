@@ -1,0 +1,45 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: vca
+          POSTGRES_PASSWORD: vca_dev_only
+          POSTGRES_DB: vca_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U vca -d vca_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      VCA_TEST_PG_URL: postgresql+psycopg://vca:vca_dev_only@localhost:5432/vca_test
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Qt libraries
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libgl1 libglib2.0-0 libfontconfig1 libxkbcommon0 libdbus-1-3
+      - name: Install
+        run: python -m pip install -r requirements-dev.txt
+      - name: Lint
+        run: ruff check core desktop tests scripts migrations
+      - name: Test
+        run: pytest
+      - name: Company data
+        run: python scripts/check_no_company_data.py
