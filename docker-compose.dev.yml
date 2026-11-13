@@ -1,0 +1,12 @@
+# Development database only. Do not point this at a real company.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: vca
+      POSTGRES_PASSWORD: vca_dev_only
+      POSTGRES_DB: vca
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - ./docker/init-dev.sql:/docker-entrypoint-initdb.d/init-dev.sql:ro

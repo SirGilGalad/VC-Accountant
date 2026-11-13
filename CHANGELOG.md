@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-12 — Phase 5: online API behind a stub
+
+- A development API exposes the same ledger services. It refuses to start unless `VCA_ENV` is `development`, and it binds to 127.0.0.1.
+- The host subdomain selects the tenant. A company on another tenant is not returned. Postgres row policies enforce the same split.
+- There is no sign-in. Uploading a desktop file returns 501 until that storage is specified.
+- The web screens use the same eight sections and the company-home lanes.
+
+Still refused: bank feeds, payments that leave the books, tax transmission, reading a company file directly, online booking, real sign-in, and sync. Those wait on a certified connection or on VCP Security Bot.
+
 ## 2026-11-12 — Phase 4: the other packs
 
 - Property, resort, professional services, retail, manufacturing, restaurant, agriculture, and nonprofit companies seed their accounts on the shared chart.

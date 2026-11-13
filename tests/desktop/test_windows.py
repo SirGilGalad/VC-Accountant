@@ -110,3 +110,19 @@ def test_wizard_prefills_address_but_not_name(qtbot, app, tmp_path, monkeypatch)
     assert wizard.ein.text() == ""
     assert wizard.address1.text() == "100 Sample Way"
     assert wizard.page(4).title() == "Review"
+
+
+def test_desktop_does_not_open_a_network_socket(qtbot, app, tmp_path, monkeypatch):
+    import socket
+
+    def _blocked(*_args, **_kwargs):
+        raise OSError("no network")
+
+    monkeypatch.setattr(socket, "socket", _blocked)
+    folder = tmp_path / "data"
+    folder.mkdir()
+    monkeypatch.setattr("core.services.preferences.data_dir", lambda: folder)
+    launch = LaunchWindow()
+    qtbot.addWidget(launch)
+    launch.show()
+    assert launch.isVisible()
